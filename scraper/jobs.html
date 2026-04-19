@@ -3,7 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+  <meta http-equiv="X-Frame-Options" content="DENY" />
   <title>Up and Forward — Live Jobs</title>
+  <style>
+    .auth-overlay {
+      position: fixed; inset: 0; background: #0a0c10;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999;
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid #1e2230; border-top-color: #2563eb;
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -146,6 +161,34 @@
   </style>
 </head>
 <body>
+
+<!-- Auth guard overlay — removed once Firebase confirms login -->
+<div id="auth-overlay" class="auth-overlay"><div class="spinner"></div></div>
+
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+  const firebaseConfig = {
+    apiKey: "AIzaSyBdezh15hEKHXSih_O354WNvaxdMxXA0T8",
+    authDomain: "up-and-forward.firebaseapp.com",
+    projectId: "up-and-forward",
+    storageBucket: "up-and-forward.firebasestorage.app",
+    messagingSenderId: "169703206106",
+    appId: "1:169703206106:web:f9302b6efbbe9cbfac09e3"
+  };
+  const auth = getAuth(initializeApp(firebaseConfig));
+  onAuthStateChanged(auth, (user) => {
+    if (!user) {
+      window.location.replace('../login.html?redirect=scraper/jobs.html');
+      return;
+    }
+    const overlay = document.getElementById('auth-overlay');
+    overlay.style.transition = 'opacity 0.2s';
+    overlay.style.opacity = '0';
+    setTimeout(() => overlay.remove(), 220);
+  });
+</script>
+
   <h1>Up and <span>Forward</span> — Live Listings</h1>
   <p class="sub">Lim inn en jobb-URL (f.eks. https://abakus.no/joblistings) og hent stillinger direkte i nettleseren.</p>
 

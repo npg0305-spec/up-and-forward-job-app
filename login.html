@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+  <meta http-equiv="X-Frame-Options" content="DENY" />
   <title>Up and Forward — Sign in</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -16,6 +18,8 @@
       --text: #e8eaf0;
       --muted: #6b7280;
       --green: #10b981;
+      --red: #ef4444;
+      --red-bg: rgba(239,68,68,0.08);
     }
 
     body {
@@ -27,7 +31,6 @@
       flex-direction: column;
     }
 
-    /* NAV */
     nav {
       display: flex; align-items: center; justify-content: space-between;
       padding: 16px 40px;
@@ -36,7 +39,6 @@
     .nav-logo { font-size: 1.2rem; font-weight: 700; letter-spacing: -0.5px; text-decoration: none; color: var(--text); }
     .nav-logo span { color: var(--accent-light); }
 
-    /* MAIN */
     main {
       flex: 1;
       display: flex;
@@ -88,7 +90,6 @@
       margin-bottom: 32px;
     }
 
-    /* SOCIAL BUTTONS */
     .social-btn {
       display: flex;
       align-items: center;
@@ -110,38 +111,22 @@
       color: #1f2937;
       border: 1px solid #e5e7eb;
     }
-    .btn-google:hover {
-      background: #f9fafb;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-    }
-    .btn-facebook {
-      background: #1877f2;
-      color: #fff;
-    }
-    .btn-facebook:hover {
-      background: #166fe5;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 16px rgba(24,119,242,0.35);
-    }
-
+    .btn-google:hover:not(:disabled) { background: #f9fafb; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
+    .btn-facebook { background: #1877f2; color: #fff; }
+    .btn-facebook:hover:not(:disabled) { background: #166fe5; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(24,119,242,0.35); }
+    .social-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none !important; }
     .social-btn svg { flex-shrink: 0; }
 
-    /* DIVIDER */
     .divider {
       display: flex; align-items: center; gap: 12px;
       margin: 20px 0;
       color: var(--muted); font-size: 0.8rem;
     }
-    .divider::before, .divider::after {
-      content: ''; flex: 1;
-      height: 1px; background: var(--border);
-    }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
-    /* EMAIL FORM */
     .form-group { margin-bottom: 14px; }
     label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
-    input[type="email"], input[type="password"] {
+    input[type="email"], input[type="password"], input[type="text"] {
       width: 100%;
       background: var(--bg);
       border: 1px solid var(--border);
@@ -150,10 +135,24 @@
       color: var(--text);
       font-size: 0.9rem;
       outline: none;
-      transition: border-color 0.2s;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
-    input[type="email"]:focus, input[type="password"]:focus { border-color: var(--accent); }
+    input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
     input::placeholder { color: var(--muted); }
+    input.input-error { border-color: var(--red); }
+
+    .password-wrap { position: relative; }
+    .toggle-pw {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; color: var(--muted);
+      padding: 4px; display: flex; align-items: center;
+    }
+    .toggle-pw:hover { color: var(--text); }
+
+    .pw-strength { margin-top: 6px; height: 3px; border-radius: 2px; background: var(--border); overflow: hidden; }
+    .pw-strength-bar { height: 100%; width: 0%; transition: width 0.3s, background 0.3s; border-radius: 2px; }
+
+    .pw-hint { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
 
     .btn-submit {
       width: 100%;
@@ -168,15 +167,12 @@
       transition: all 0.2s;
       margin-top: 4px;
     }
-    .btn-submit:hover {
-      background: var(--accent-light);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 20px rgba(37,99,235,0.4);
-    }
+    .btn-submit:hover:not(:disabled) { background: var(--accent-light); transform: translateY(-1px); box-shadow: 0 4px 20px rgba(37,99,235,0.4); }
+    .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
     .forgot { text-align: right; margin-top: -8px; margin-bottom: 16px; }
-    .forgot a { font-size: 0.78rem; color: var(--muted); text-decoration: none; }
-    .forgot a:hover { color: var(--accent-light); }
+    .forgot button { background: none; border: none; cursor: pointer; font-size: 0.78rem; color: var(--muted); padding: 0; }
+    .forgot button:hover { color: var(--accent-light); }
 
     .auth-switch {
       text-align: center;
@@ -184,8 +180,8 @@
       color: var(--muted);
       margin-top: 24px;
     }
-    .auth-switch a { color: var(--accent-light); text-decoration: none; font-weight: 600; }
-    .auth-switch a:hover { text-decoration: underline; }
+    .auth-switch button { background: none; border: none; cursor: pointer; color: var(--accent-light); font-weight: 600; font-size: 0.82rem; padding: 0; }
+    .auth-switch button:hover { text-decoration: underline; }
 
     .terms {
       text-align: center;
@@ -196,7 +192,6 @@
     }
     .terms a { color: var(--muted); text-decoration: underline; }
 
-    /* TOGGLE tabs */
     .auth-tabs {
       display: flex;
       background: var(--bg);
@@ -217,11 +212,45 @@
       border: none;
       background: transparent;
     }
-    .auth-tab.active {
-      background: var(--surface);
-      color: var(--text);
-      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    .auth-tab.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+
+    .error-banner {
+      background: var(--red-bg);
+      border: 1px solid rgba(239,68,68,0.25);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.82rem;
+      color: var(--red);
+      margin-bottom: 16px;
+      display: none;
     }
+    .error-banner.visible { display: block; }
+
+    .success-banner {
+      background: rgba(16,185,129,0.08);
+      border: 1px solid rgba(16,185,129,0.25);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.82rem;
+      color: var(--green);
+      margin-bottom: 16px;
+      display: none;
+    }
+    .success-banner.visible { display: block; }
+
+    .auth-init-overlay {
+      position: fixed; inset: 0; background: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999; transition: opacity 0.25s;
+    }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     footer {
       text-align: center;
@@ -234,6 +263,11 @@
 </head>
 <body>
 
+<!-- Auth loading overlay — hidden once Firebase resolves -->
+<div id="auth-overlay" class="auth-init-overlay">
+  <div class="spinner"></div>
+</div>
+
 <nav>
   <a href="index.html" class="nav-logo">Up and <span>Forward</span></a>
 </nav>
@@ -242,18 +276,20 @@
   <div class="auth-card">
     <div class="auth-logo">Up and <span>Forward</span></div>
 
-    <!-- TABS -->
     <div class="auth-tabs">
-      <button class="auth-tab active" onclick="setTab('signin', this)">Sign in</button>
-      <button class="auth-tab" onclick="setTab('signup', this)">Create account</button>
+      <button class="auth-tab active" id="tab-signin" onclick="setTab('signin')">Sign in</button>
+      <button class="auth-tab" id="tab-signup" onclick="setTab('signup')">Create account</button>
     </div>
 
     <h1 id="auth-title">Welcome back</h1>
     <p class="auth-sub" id="auth-sub">Sign in to your Up and Forward account</p>
 
-    <!-- GOOGLE -->
-    <button id="btn-google" class="social-btn btn-google" onclick="signInWithGoogle()">
-      <svg width="18" height="18" viewBox="0 0 18 18">
+    <div id="error-banner" class="error-banner" role="alert" aria-live="polite"></div>
+    <div id="success-banner" class="success-banner" role="status" aria-live="polite"></div>
+
+    <!-- Google -->
+    <button id="btn-google" class="social-btn btn-google" onclick="handleGoogle()">
+      <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
         <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/>
         <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
         <path fill="#FBBC05" d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71s.102-1.17.282-1.71V4.958H.957C.347 6.173 0 7.548 0 9s.348 2.827.957 4.042l3.007-2.332z"/>
@@ -262,9 +298,9 @@
       Continue with Google
     </button>
 
-    <!-- FACEBOOK -->
-    <button class="social-btn btn-facebook" onclick="handleSocial('Facebook')">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff">
+    <!-- Facebook -->
+    <button id="btn-facebook" class="social-btn btn-facebook" onclick="handleFacebook()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff" aria-hidden="true">
         <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.267h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
       </svg>
       Continue with Facebook
@@ -272,24 +308,44 @@
 
     <div class="divider">or continue with email</div>
 
-    <!-- EMAIL FORM -->
-    <form onsubmit="handleEmail(event)">
+    <form id="auth-form" onsubmit="handleEmailForm(event)" novalidate>
+      <!-- Signup-only name field -->
+      <div class="form-group" id="name-group" style="display:none">
+        <label for="input-name">Full name</label>
+        <input type="text" id="input-name" placeholder="Jane Smith" autocomplete="name" />
+      </div>
+
       <div class="form-group">
-        <label>Email address</label>
-        <input type="email" placeholder="you@example.com" required />
+        <label for="input-email">Email address</label>
+        <input type="email" id="input-email" placeholder="you@example.com" autocomplete="email" required />
       </div>
+
       <div class="form-group">
-        <label>Password</label>
-        <input type="password" placeholder="••••••••" required />
+        <label for="input-password">Password</label>
+        <div class="password-wrap">
+          <input type="password" id="input-password" placeholder="••••••••" autocomplete="current-password" required />
+          <button type="button" class="toggle-pw" id="toggle-pw" aria-label="Show password" onclick="togglePassword()">
+            <svg id="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
+        <!-- Signup password strength -->
+        <div id="pw-strength-wrap" style="display:none">
+          <div class="pw-strength"><div class="pw-strength-bar" id="pw-bar"></div></div>
+          <p class="pw-hint" id="pw-hint">Min. 8 characters, include a number or symbol.</p>
+        </div>
       </div>
-      <div class="forgot" id="forgot-link">
-        <a href="#">Forgot password?</a>
+
+      <div class="forgot" id="forgot-wrap">
+        <button type="button" onclick="handleForgotPassword()">Forgot password?</button>
       </div>
-      <button type="submit" class="btn-submit" id="submit-btn">Sign in</button>
+
+      <button type="submit" class="btn-submit" id="btn-submit">Sign in</button>
     </form>
 
     <p class="auth-switch" id="auth-switch">
-      Don't have an account? <a href="#" onclick="setTab('signup', document.querySelectorAll('.auth-tab')[1]); return false;">Create one free</a>
+      Don't have an account? <button onclick="setTab('signup')">Create one free</button>
     </p>
 
     <p class="terms">
@@ -300,13 +356,20 @@
 
 <footer>© 2026 Up and Forward</footer>
 
-<!-- Firebase SDK -->
 <script type="module">
-  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-  import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged }
-    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+  import { initializeApp }    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import {
+    getAuth,
+    onAuthStateChanged,
+    signInWithPopup,
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    sendPasswordResetEmail,
+    updateProfile,
+    GoogleAuthProvider,
+    FacebookAuthProvider
+  } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
-  // ── PASTE YOUR FIREBASE CONFIG HERE ──────────────────────────────────────
   const firebaseConfig = {
     apiKey:            "AIzaSyBdezh15hEKHXSih_O354WNvaxdMxXA0T8",
     authDomain:        "up-and-forward.firebaseapp.com",
@@ -315,61 +378,209 @@
     messagingSenderId: "169703206106",
     appId:             "1:169703206106:web:f9302b6efbbe9cbfac09e3"
   };
-  // ─────────────────────────────────────────────────────────────────────────
 
-  const app      = initializeApp(firebaseConfig);
-  const auth     = getAuth(app);
-  const provider = new GoogleAuthProvider();
+  const app             = initializeApp(firebaseConfig);
+  const auth            = getAuth(app);
+  const googleProvider  = new GoogleAuthProvider();
+  const fbProvider      = new FacebookAuthProvider();
 
-  // Redirect if already logged in
-  onAuthStateChanged(auth, user => {
-    if (user) window.location.href = 'dashboard.html';
+  googleProvider.setCustomParameters({ prompt: 'select_account' });
+
+  // ── Auth state: redirect already-logged-in users ────────────────────────────
+  onAuthStateChanged(auth, (user) => {
+    document.getElementById('auth-overlay').style.opacity = '0';
+    setTimeout(() => document.getElementById('auth-overlay').remove(), 260);
+    if (user) {
+      // Already signed in — go to dashboard
+      const dest = new URLSearchParams(location.search).get('redirect') || 'dashboard.html';
+      // Prevent open-redirect: only allow relative paths on same origin
+      window.location.replace(dest.startsWith('/') || !dest.includes('://') ? dest : 'dashboard.html');
+    }
   });
 
-  // Google sign-in
-  window.signInWithGoogle = async function() {
+  // ── Friendly error messages (no info leakage) ────────────────────────────────
+  function friendlyError(code) {
+    const map = {
+      'auth/user-not-found':           'Invalid email or password.',
+      'auth/wrong-password':           'Invalid email or password.',
+      'auth/invalid-credential':       'Invalid email or password.',
+      'auth/invalid-email':            'Please enter a valid email address.',
+      'auth/email-already-in-use':     'An account with this email already exists. Try signing in.',
+      'auth/weak-password':            'Password must be at least 8 characters.',
+      'auth/too-many-requests':        'Too many failed attempts. Please wait a few minutes and try again.',
+      'auth/user-disabled':            'This account has been disabled. Contact support.',
+      'auth/network-request-failed':   'Network error. Check your connection and try again.',
+      'auth/popup-blocked':            'Popup was blocked. Allow popups for this site and try again.',
+      'auth/account-exists-with-different-credential':
+                                       'An account already exists with this email. Try a different sign-in method.',
+    };
+    return map[code] || 'Something went wrong. Please try again.';
+  }
+
+  function showError(msg)   { const b = document.getElementById('error-banner');   b.textContent = msg; b.classList.add('visible');    document.getElementById('success-banner').classList.remove('visible'); }
+  function showSuccess(msg) { const b = document.getElementById('success-banner'); b.textContent = msg; b.classList.add('visible'); document.getElementById('error-banner').classList.remove('visible'); }
+  function clearBanners()   { document.getElementById('error-banner').classList.remove('visible'); document.getElementById('success-banner').classList.remove('visible'); }
+
+  function setSocialLoading(el, loading, originalHTML) {
+    el.disabled = loading;
+    if (loading) { el.innerHTML = '<span style="opacity:0.7">Connecting…</span>'; }
+    else         { el.innerHTML = originalHTML; }
+  }
+
+  // ── Google sign-in ──────────────────────────────────────────────────────────
+  const googleOriginal = document.getElementById('btn-google').innerHTML;
+  window.handleGoogle = async function() {
+    clearBanners();
     const btn = document.getElementById('btn-google');
-    btn.disabled = true;
-    btn.innerHTML = '<span style="opacity:0.6">Connecting...</span>';
+    setSocialLoading(btn, true);
     try {
-      await signInWithPopup(auth, provider);
-      // onAuthStateChanged will redirect
+      await signInWithPopup(auth, googleProvider);
     } catch (err) {
-      btn.disabled = false;
-      btn.innerHTML = googleBtnHTML;
-      if (err.code !== 'auth/popup-closed-by-user') {
-        alert('Sign-in failed: ' + err.message);
+      setSocialLoading(btn, false, googleOriginal);
+      if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
+        showError(friendlyError(err.code));
       }
     }
   };
 
-  const googleBtnHTML = document.getElementById('btn-google')?.innerHTML;
-</script>
+  // ── Facebook sign-in ────────────────────────────────────────────────────────
+  const fbOriginal = document.getElementById('btn-facebook').innerHTML;
+  window.handleFacebook = async function() {
+    clearBanners();
+    const btn = document.getElementById('btn-facebook');
+    setSocialLoading(btn, true);
+    try {
+      await signInWithPopup(auth, fbProvider);
+    } catch (err) {
+      setSocialLoading(btn, false, fbOriginal);
+      if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
+        showError(friendlyError(err.code));
+      }
+    }
+  };
 
-<script>
-  function setTab(mode, el) {
-    document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-    el.classList.add('active');
+  // ── Email / password ────────────────────────────────────────────────────────
+  let currentTab = 'signin';
 
+  window.handleEmailForm = async function(e) {
+    e.preventDefault();
+    clearBanners();
+
+    const email    = document.getElementById('input-email').value.trim();
+    const password = document.getElementById('input-password').value;
+    const btn      = document.getElementById('btn-submit');
+
+    if (!email || !password) { showError('Please fill in all fields.'); return; }
+
+    if (currentTab === 'signup') {
+      if (password.length < 8) { showError('Password must be at least 8 characters.'); return; }
+      if (!hasMinStrength(password)) {
+        showError('Password must include a letter and a number or symbol.');
+        return;
+      }
+    }
+
+    btn.disabled    = true;
+    btn.textContent = currentTab === 'signin' ? 'Signing in…' : 'Creating account…';
+
+    try {
+      if (currentTab === 'signin') {
+        await signInWithEmailAndPassword(auth, email, password);
+      } else {
+        const name = document.getElementById('input-name').value.trim();
+        const cred = await createUserWithEmailAndPassword(auth, email, password);
+        if (name) await updateProfile(cred.user, { displayName: name });
+      }
+      // onAuthStateChanged will redirect
+    } catch (err) {
+      showError(friendlyError(err.code));
+      btn.disabled    = false;
+      btn.textContent = currentTab === 'signin' ? 'Sign in' : 'Create account';
+    }
+  };
+
+  // ── Forgot password ─────────────────────────────────────────────────────────
+  window.handleForgotPassword = async function() {
+    clearBanners();
+    const email = document.getElementById('input-email').value.trim();
+    if (!email) {
+      showError('Enter your email address above, then click "Forgot password".');
+      document.getElementById('input-email').focus();
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, email);
+      showSuccess('Password reset email sent. Check your inbox (and spam folder).');
+    } catch (err) {
+      // Always show the same success message to prevent email enumeration
+      showSuccess('If that email is registered, a reset link has been sent.');
+    }
+  };
+
+  // ── Password strength ───────────────────────────────────────────────────────
+  function hasMinStrength(pw) {
+    return /[a-zA-Z]/.test(pw) && /[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pw);
+  }
+
+  function calcStrength(pw) {
+    if (!pw) return 0;
+    let score = 0;
+    if (pw.length >= 8)  score++;
+    if (pw.length >= 12) score++;
+    if (/[A-Z]/.test(pw)) score++;
+    if (/[0-9]/.test(pw)) score++;
+    if (/[^a-zA-Z0-9]/.test(pw)) score++;
+    return Math.min(score, 4);
+  }
+
+  document.getElementById('input-password').addEventListener('input', function() {
+    if (currentTab !== 'signup') return;
+    const score  = calcStrength(this.value);
+    const bar    = document.getElementById('pw-bar');
+    const hint   = document.getElementById('pw-hint');
+    const colors = ['#ef4444', '#f97316', '#eab308', '#10b981'];
+    const labels = ['Too weak', 'Weak', 'Fair', 'Strong'];
+    bar.style.width      = `${score * 25}%`;
+    bar.style.background = colors[Math.max(score - 1, 0)];
+    hint.textContent     = score > 0 ? labels[Math.min(score - 1, 3)] : 'Min. 8 characters, include a number or symbol.';
+  });
+
+  // ── Tab switching ────────────────────────────────────────────────────────────
+  window.setTab = function(mode) {
+    currentTab = mode;
     const isSignup = mode === 'signup';
+
+    document.getElementById('tab-signin').classList.toggle('active', !isSignup);
+    document.getElementById('tab-signup').classList.toggle('active',  isSignup);
     document.getElementById('auth-title').textContent = isSignup ? 'Create your account' : 'Welcome back';
-    document.getElementById('auth-sub').textContent = isSignup
+    document.getElementById('auth-sub').textContent   = isSignup
       ? 'Start your 14-day free trial — no credit card required'
       : 'Sign in to your Up and Forward account';
-    document.getElementById('submit-btn').textContent = isSignup ? 'Create account' : 'Sign in';
-    document.getElementById('forgot-link').style.display = isSignup ? 'none' : 'block';
+    document.getElementById('btn-submit').textContent = isSignup ? 'Create account' : 'Sign in';
+    document.getElementById('forgot-wrap').style.display     = isSignup ? 'none' : 'block';
+    document.getElementById('name-group').style.display      = isSignup ? 'block' : 'none';
+    document.getElementById('pw-strength-wrap').style.display = isSignup ? 'block' : 'none';
+    document.getElementById('input-password').setAttribute('autocomplete', isSignup ? 'new-password' : 'current-password');
     document.getElementById('auth-switch').innerHTML = isSignup
-      ? 'Already have an account? <a href="#" onclick="setTab(\'signin\', document.querySelectorAll(\'.auth-tab\')[0]); return false;">Sign in</a>'
-      : 'Don\'t have an account? <a href="#" onclick="setTab(\'signup\', document.querySelectorAll(\'.auth-tab\')[1]); return false;">Create one free</a>';
-  }
+      ? 'Already have an account? <button onclick="setTab(\'signin\')">Sign in</button>'
+      : 'Don\'t have an account? <button onclick="setTab(\'signup\')">Create one free</button>';
 
-  function handleEmail(e) {
-    e.preventDefault();
-    const btn = document.getElementById('submit-btn');
-    btn.textContent = 'Signing in...';
-    btn.disabled = true;
-    setTimeout(() => { window.location.href = 'dashboard.html'; }, 1000);
-  }
+    clearBanners();
+    document.getElementById('auth-form').reset();
+    document.getElementById('pw-bar').style.width = '0%';
+  };
+
+  // ── Toggle password visibility ────────────────────────────────────────────────
+  window.togglePassword = function() {
+    const input = document.getElementById('input-password');
+    const icon  = document.getElementById('eye-icon');
+    const showing = input.type === 'text';
+    input.type = showing ? 'password' : 'text';
+    document.getElementById('toggle-pw').setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+    icon.innerHTML = showing
+      ? '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'
+      : '<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+  };
 </script>
 
 </body>

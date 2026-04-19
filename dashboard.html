@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+  <meta http-equiv="X-Frame-Options" content="DENY" />
+  <title>Up and Forward — Dashboard</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0c10;
+      --surface: #111318;
+      --surface2: #161b27;
+      --border: #1e2230;
+      --accent: #2563eb;
+      --accent-light: #3b82f6;
+      --text: #e8eaf0;
+      --muted: #6b7280;
+      --green: #10b981;
+      --red: #ef4444;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── Auth overlay ── */
+    .auth-overlay {
+      position: fixed; inset: 0; background: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999;
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Nav ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10,12,16,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 32px; height: 60px;
+    }
+    .nav-logo { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.5px; color: var(--text); text-decoration: none; }
+    .nav-logo span { color: var(--accent-light); }
+
+    .nav-right { display: flex; align-items: center; gap: 16px; }
+
+    .user-pill {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 40px;
+      padding: 5px 14px 5px 5px;
+    }
+    .user-avatar {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 700; color: #fff;
+      flex-shrink: 0; overflow: hidden;
+    }
+    .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .user-name { font-size: 0.85rem; font-weight: 600; }
+    .user-email { font-size: 0.72rem; color: var(--muted); }
+
+    .btn-signout {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 8px;
+      padding: 7px 14px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-signout:hover { border-color: var(--red); color: var(--red); }
+
+    /* ── Page layout ── */
+    .page { max-width: 1080px; margin: 0 auto; padding: 32px 24px 60px; }
+
+    .page-header { margin-bottom: 28px; }
+    .page-header h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.4px; margin-bottom: 4px; }
+    .page-header p { color: var(--muted); font-size: 0.875rem; }
+
+    /* ── Stats row ── */
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 28px; }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px 22px;
+    }
+    .stat-label { font-size: 0.75rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .stat-value { font-size: 1.8rem; font-weight: 800; letter-spacing: -0.5px; }
+    .stat-value.accent { color: var(--accent-light); }
+    .stat-sub { font-size: 0.72rem; color: var(--muted); margin-top: 3px; }
+
+    /* ── Controls ── */
+    .controls {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      display: grid;
+      grid-template-columns: 1fr auto auto auto;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .controls input {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 11px 14px;
+      color: var(--text);
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      width: 100%;
+    }
+    .controls input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
+    .controls input::placeholder { color: var(--muted); }
+
+    .btn {
+      border: 1px solid transparent;
+      border-radius: 8px;
+      padding: 11px 16px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-light); }
+    .btn-ghost { background: transparent; color: var(--text); border-color: var(--border); }
+    .btn-ghost:hover:not(:disabled) { border-color: var(--accent); color: var(--accent-light); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Filter pills ── */
+    .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .filter-pill {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      transition: all 0.15s;
+    }
+    .filter-pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .filter-pill:hover:not(.active) { border-color: var(--accent); color: var(--accent-light); }
+
+    /* ── Status ── */
+    .status-bar { font-size: 0.82rem; color: var(--muted); margin-bottom: 10px; min-height: 1.2em; }
+    .status-bar.error { color: var(--red); }
+    .status-bar.ok { color: var(--green); }
+
+    /* ── Job cards ── */
+    .job-grid { display: flex; flex-direction: column; gap: 10px; }
+
+    .job {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      animation: fadeIn 0.25s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    .job:hover { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+
+    .job-meta { flex: 1; min-width: 0; }
+    .job-bank {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--accent-light);
+      margin-bottom: 4px;
+    }
+    .job-title { font-size: 0.97rem; font-weight: 700; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .job-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tag {
+      padding: 3px 9px;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .apply-btn {
+      flex-shrink: 0;
+      background: var(--accent);
+      color: #fff;
+      padding: 9px 16px;
+      border-radius: 9px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: background 0.2s, transform 0.15s;
+      white-space: nowrap;
+    }
+    .apply-btn:hover { background: var(--accent-light); transform: translateY(-1px); }
+
+    .empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+    .empty-icon { font-size: 2.5rem; margin-bottom: 12px; }
+
+    @media (max-width: 680px) {
+      nav { padding: 0 16px; }
+      .stats { grid-template-columns: 1fr; }
+      .controls { grid-template-columns: 1fr; }
+      .user-email { display: none; }
+      .job { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="auth-overlay" class="auth-overlay">
+  <div class="spinner"></div>
+</div>
+
+<nav id="main-nav" style="display:none">
+  <a href="dashboard.html" class="nav-logo">Up and <span>Forward</span></a>
+  <div class="nav-right">
+    <div class="user-pill">
+      <div class="user-avatar" id="user-avatar">?</div>
+      <div>
+        <div class="user-name" id="user-name">—</div>
+        <div class="user-email" id="user-email">—</div>
+      </div>
+    </div>
+    <button class="btn-signout" onclick="handleSignOut()">Sign out</button>
+  </div>
+</nav>
+
+<div class="page" id="main-page" style="display:none">
+
+  <div class="page-header">
+    <h1>Job Dashboard</h1>
+    <p>Live finance internship & analyst listings — updated continuously</p>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-label">Total listings</div>
+      <div class="stat-value accent" id="stat-total">—</div>
+      <div class="stat-sub">across all firms</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Firms monitored</div>
+      <div class="stat-value">40+</div>
+      <div class="stat-sub">investment banks & boutiques</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Last updated</div>
+      <div class="stat-value" id="stat-updated" style="font-size:1rem;margin-top:4px">—</div>
+      <div class="stat-sub">auto-refreshed</div>
+    </div>
+  </div>
+
+  <!-- Scraper controls -->
+  <div class="controls">
+    <input id="url-input" type="url" placeholder="Paste any job page URL to scan…" />
+    <button class="btn btn-primary" id="btn-fetch" onclick="scrapeFromUrl()">Scan URL</button>
+    <button class="btn btn-ghost" id="btn-load" onclick="loadSavedJobs()">Load saved</button>
+    <button class="btn btn-ghost" id="btn-export" onclick="exportJobs()">Export JSON</button>
+  </div>
+
+  <!-- Search -->
+  <div class="controls" style="grid-template-columns:1fr; padding:10px 14px; margin-bottom:10px;">
+    <input id="search-input" type="search" placeholder="Search by title, bank, or location…" oninput="applyFilters()" />
+  </div>
+
+  <!-- Filter pills -->
+  <div class="filters" id="filter-pills"></div>
+
+  <div class="status-bar" id="status-bar"></div>
+  <div class="job-grid" id="job-grid"></div>
+</div>
+
+<script type="module">
+  import { initializeApp }  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getAuth, onAuthStateChanged, signOut }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+  const firebaseConfig = {
+    apiKey:            "AIzaSyBdezh15hEKHXSih_O354WNvaxdMxXA0T8",
+    authDomain:        "up-and-forward.firebaseapp.com",
+    projectId:         "up-and-forward",
+    storageBucket:     "up-and-forward.firebasestorage.app",
+    messagingSenderId: "169703206106",
+    appId:             "1:169703206106:web:f9302b6efbbe9cbfac09e3"
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  onAuthStateChanged(auth, (user) => {
+    const overlay = document.getElementById('auth-overlay');
+    if (!user) {
+      window.location.replace('login.html');
+      return;
+    }
+
+    // ── Render user info ───────────────────────────────────────────────────────
+    const name   = user.displayName || user.email?.split('@')[0] || 'User';
+    const email  = user.email || '';
+    const photo  = user.photoURL;
+    const initials = name.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase();
+
+    document.getElementById('user-name').textContent  = name;
+    document.getElementById('user-email').textContent = email;
+    const avatarEl = document.getElementById('user-avatar');
+    if (photo) {
+      avatarEl.innerHTML = `<img src="${encodeURI(photo)}" alt="${escHtml(name)}" referrerpolicy="no-referrer" />`;
+    } else {
+      avatarEl.textContent = initials;
+    }
+
+    // Show page
+    overlay.style.transition = 'opacity 0.25s';
+    overlay.style.opacity = '0';
+    setTimeout(() => overlay.remove(), 260);
+    document.getElementById('main-nav').style.display  = '';
+    document.getElementById('main-page').style.display = '';
+
+    // Load jobs
+    loadSavedJobs();
+  });
+
+  window.handleSignOut = async function() {
+    try { await signOut(auth); } catch {}
+    window.location.replace('login.html');
+  };
+</script>
+
+<script>
+  // ── Utilities ────────────────────────────────────────────────────────────────
+  function escHtml(v) {
+    return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+  }
+  function safeUrl(u) {
+    try {
+      const parsed = new URL(u);
+      if (parsed.protocol === 'http:' || parsed.protocol === 'https:') return parsed.href;
+    } catch {}
+    return '#';
+  }
+  function relativeTime(iso) {
+    try {
+      const diff = Date.now() - new Date(iso).getTime();
+      const h = Math.floor(diff / 3_600_000);
+      const m = Math.floor(diff / 60_000);
+      if (m < 1) return 'just now';
+      if (m < 60) return `${m}m ago`;
+      if (h < 24) return `${h}h ago`;
+      return `${Math.floor(h / 24)}d ago`;
+    } catch { return ''; }
+  }
+
+  const STORAGE_KEY  = 'upforward_jobs_v2';
+  const STORAGE_URL  = 'upforward_last_url';
+  const JOB_HINTS    = ['job','jobs','career','careers','position','vacancy','intern','internship','graduate','analyst','associate','stilling','stillinger','ledig','trainee'];
+
+  let allJobs = [];
+  let activeFilter = 'All';
+
+  // ── Status helpers ────────────────────────────────────────────────────────────
+  function setStatus(msg, type='') {
+    const el = document.getElementById('status-bar');
+    el.textContent = msg;
+    el.className = `status-bar${type ? ' '+type : ''}`;
+  }
+
+  // ── Filter pills ──────────────────────────────────────────────────────────────
+  function buildFilterPills(jobs) {
+    const banks = ['All', ...new Set(jobs.map(j => j.bank).filter(Boolean))].sort((a,b) => a === 'All' ? -1 : a.localeCompare(b));
+    const container = document.getElementById('filter-pills');
+    container.innerHTML = banks.map(b =>
+      `<button class="filter-pill${b === activeFilter ? ' active' : ''}" onclick="setFilter('${escHtml(b)}')">${escHtml(b)}</button>`
+    ).join('');
+  }
+
+  window.setFilter = function(bank) {
+    activeFilter = bank;
+    buildFilterPills(allJobs);
+    applyFilters();
+  };
+
+  window.applyFilters = function() {
+    const q = document.getElementById('search-input').value.toLowerCase();
+    let filtered = allJobs;
+    if (activeFilter !== 'All') filtered = filtered.filter(j => j.bank === activeFilter);
+    if (q) filtered = filtered.filter(j =>
+      (j.title+j.bank+j.location).toLowerCase().includes(q)
+    );
+    renderJobGrid(filtered);
+  };
+
+  // ── Render ────────────────────────────────────────────────────────────────────
+  function renderJobGrid(jobs) {
+    const grid = document.getElementById('job-grid');
+    if (!jobs.length) {
+      grid.innerHTML = `<div class="empty"><div class="empty-icon">🔍</div><p>No listings match your filters.</p></div>`;
+      return;
+    }
+    grid.innerHTML = jobs.map(j => `
+      <div class="job">
+        <div class="job-meta">
+          <div class="job-bank">${escHtml(j.bank || 'Unknown')}</div>
+          <div class="job-title" title="${escHtml(j.title)}">${escHtml(j.title || 'Untitled')}</div>
+          <div class="job-tags">
+            ${j.location ? `<span class="tag">📍 ${escHtml(j.location)}</span>` : ''}
+            ${j.found_at ? `<span class="tag">${escHtml(relativeTime(j.found_at))}</span>` : ''}
+          </div>
+        </div>
+        <a class="apply-btn" href="${escHtml(safeUrl(j.url || '#'))}" target="_blank" rel="noopener noreferrer">Apply →</a>
+      </div>
+    `).join('');
+  }
+
+  function displayJobs(jobs) {
+    allJobs = Array.isArray(jobs) ? jobs : [];
+    document.getElementById('stat-total').textContent = allJobs.length;
+    const latest = allJobs.map(j => j.found_at).filter(Boolean).sort().pop();
+    document.getElementById('stat-updated').textContent = latest ? relativeTime(latest) : '—';
+    activeFilter = 'All';
+    buildFilterPills(allJobs);
+    applyFilters();
+  }
+
+  // ── Normalise ─────────────────────────────────────────────────────────────────
+  function normalise(job, host) {
+    return {
+      id:       job.id || `g_${Math.random().toString(16).slice(2,10)}`,
+      bank:     (job.bank || host || 'Unknown').trim(),
+      title:    (job.title || '').trim() || 'Untitled role',
+      location: (job.location || '').trim(),
+      url:      (job.url || '').trim() || '#',
+      found_at: job.found_at || new Date().toISOString()
+    };
+  }
+
+  function dedupe(jobs) {
+    const seen = new Set();
+    return jobs.filter(j => {
+      const k = `${j.url}|${(j.title||'').toLowerCase()}`;
+      if (seen.has(k)) return false;
+      seen.add(k); return true;
+    });
+  }
+
+  // ── Load saved jobs ──────────────────────────────────────────────────────────
+  window.loadSavedJobs = async function() {
+    setStatus('Loading…');
+    const cached = localStorage.getItem(STORAGE_KEY);
+    if (cached) {
+      try {
+        const jobs = JSON.parse(cached);
+        if (Array.isArray(jobs) && jobs.length) { displayJobs(jobs); setStatus('Loaded from cache.', 'ok'); return; }
+      } catch {}
+    }
+    try {
+      const r = await fetch(`scraper/new_jobs.json?t=${Date.now()}`);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const raw = await r.json();
+      const jobs = Array.isArray(raw) ? raw.map(j => normalise(j, 'File')) : [];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(jobs));
+      displayJobs(jobs);
+      setStatus(`Loaded ${jobs.length} listings.`, 'ok');
+    } catch (err) {
+      setStatus(`Could not load jobs: ${err.message}`, 'error');
+      displayJobs([]);
+    }
+  };
+
+  // ── URL scraper ───────────────────────────────────────────────────────────────
+  function looksLikeJob(text, url) {
+    return JOB_HINTS.some(h => `${text} ${url}`.toLowerCase().includes(h));
+  }
+  function titleFromUrl(url) {
+    try { return new URL(url).pathname.split('/').filter(Boolean).pop()?.replace(/[-_]+/g,' ').trim() || ''; } catch { return ''; }
+  }
+
+  function parseFromHtml(html, base) {
+    const doc  = new DOMParser().parseFromString(html, 'text/html');
+    const host = new URL(base).hostname;
+    const jobs = [];
+    doc.querySelectorAll('a[href]').forEach(a => {
+      const href = a.getAttribute('href') || '';
+      const title = (a.textContent || '').trim().replace(/\s+/g,' ');
+      if (!href || href.startsWith('#')) return;
+      let url;
+      try { url = new URL(href, base).href; } catch { return; }
+      if (!looksLikeJob(title, url)) return;
+      jobs.push({ bank: host, title: title || titleFromUrl(url), location: '', url });
+    });
+    return dedupe(jobs).map(j => normalise(j, host));
+  }
+
+  async function fetchPage(url) {
+    const clean = url.replace(/^https?:\/\//i,'');
+    const attempts = [
+      { label:'direct', url },
+      { label:'jina',   url:`https://r.jina.ai/https://${clean}` }
+    ];
+    const errs = [];
+    for (const a of attempts) {
+      try {
+        const r = await fetch(a.url);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const text = await r.text();
+        if (text.trim()) return { text, via: a.label };
+        throw new Error('Empty response');
+      } catch (e) { errs.push(`${a.label}: ${e.message}`); }
+    }
+    throw new Error(errs.join(' | '));
+  }
+
+  window.scrapeFromUrl = async function() {
+    const url = document.getElementById('url-input').value.trim();
+    if (!url) { setStatus('Enter a URL first.', 'error'); return; }
+    try {
+      const parsed = new URL(url);
+      if (!['http:','https:'].includes(parsed.protocol)) throw new Error('URL must start with http:// or https://');
+    } catch (e) { setStatus(`Invalid URL: ${e.message}`, 'error'); return; }
+
+    localStorage.setItem(STORAGE_URL, url);
+    setStatus('Fetching…');
+    ['btn-fetch','btn-load','btn-export'].forEach(id => document.getElementById(id).disabled = true);
+
+    try {
+      const { text, via } = await fetchPage(url);
+      const jobs = parseFromHtml(text, url);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(jobs));
+      displayJobs(jobs);
+      setStatus(`Found ${jobs.length} listings via ${via}.`, jobs.length ? 'ok' : '');
+    } catch (e) {
+      setStatus(`Error: ${e.message}`, 'error');
+    } finally {
+      ['btn-fetch','btn-load','btn-export'].forEach(id => document.getElementById(id).disabled = false);
+    }
+  };
+
+  // ── Export ────────────────────────────────────────────────────────────────────
+  window.exportJobs = function() {
+    if (!allJobs.length) { setStatus('No jobs to export.', 'error'); return; }
+    const blob = new Blob([JSON.stringify(allJobs, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'jobs_export.json';
+    document.body.appendChild(a);
+    a.click(); a.remove();
+    URL.revokeObjectURL(a.href);
+    setStatus('Exported as JSON.', 'ok');
+  };
+
+  // ── Restore last URL ──────────────────────────────────────────────────────────
+  const lastUrl = localStorage.getItem(STORAGE_URL);
+  if (lastUrl) document.getElementById('url-input').value = lastUrl;
+</script>
+
+</body>
+</html>
