@@ -2,55 +2,509 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Up and Forward — Live Jobs</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #0a0c10; color: #e8eaf0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 40px 24px; }
-    h1 { font-size: 1.4rem; font-weight: 800; margin-bottom: 8px; }
-    h1 span { color: #3b82f6; }
-    .sub { color: #6b7280; font-size: 0.85rem; margin-bottom: 32px; }
+
+    :root {
+      --bg: #0a0c10;
+      --surface: #111318;
+      --border: #1e2230;
+      --accent: #2563eb;
+      --accent-light: #3b82f6;
+      --text: #e8eaf0;
+      --muted: #6b7280;
+      --danger: #ef4444;
+      --ok: #22c55e;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      padding: 40px 24px;
+      max-width: 980px;
+      margin: 0 auto;
+    }
+
+    h1 { font-size: 1.5rem; font-weight: 800; margin-bottom: 10px; letter-spacing: -0.4px; }
+    h1 span { color: var(--accent-light); }
+
+    .sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 16px; }
+
+    .controls {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      display: grid;
+      grid-template-columns: 1fr auto auto auto;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .controls input {
+      width: 100%;
+      background: #0d1017;
+      border: 1px solid #252a3b;
+      color: var(--text);
+      border-radius: 8px;
+      padding: 11px 12px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .controls input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+    }
+
+    .btn {
+      border: 1px solid transparent;
+      border-radius: 8px;
+      padding: 11px 14px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover { background: var(--accent-light); }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text);
+      border-color: var(--border);
+    }
+
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent-light); }
+
+    .status {
+      font-size: 0.82rem;
+      margin-bottom: 12px;
+      min-height: 1.2em;
+      color: var(--muted);
+    }
+
+    .status.error { color: var(--danger); }
+    .status.ok { color: var(--ok); }
+
     .job {
-      background: #111318; border: 1px solid #1e2230; border-radius: 12px;
-      padding: 20px 24px; margin-bottom: 14px;
-      display: flex; align-items: center; justify-content: space-between; gap: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
       transition: border-color 0.2s;
     }
-    .job:hover { border-color: #2563eb; }
-    .bank { font-size: 0.75rem; color: #6b7280; margin-bottom: 4px; }
-    .title { font-size: 0.95rem; font-weight: 700; margin-bottom: 8px; }
-    .location { font-size: 0.78rem; color: #6b7280; }
+
+    .job:hover { border-color: var(--accent); }
+
+    .bank { font-size: 0.74rem; color: var(--muted); margin-bottom: 4px; }
+    .title { font-size: 0.96rem; font-weight: 700; margin-bottom: 7px; }
+    .location { font-size: 0.8rem; color: var(--muted); }
+
     .apply {
       flex-shrink: 0;
-      background: #2563eb; color: #fff;
-      padding: 9px 18px; border-radius: 8px;
-      font-size: 0.82rem; font-weight: 600;
-      text-decoration: none; white-space: nowrap;
+      background: var(--accent);
+      color: #fff;
+      padding: 9px 14px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-decoration: none;
+      white-space: nowrap;
       transition: background 0.2s;
     }
-    .apply:hover { background: #3b82f6; }
+
+    .apply:hover { background: var(--accent-light); }
+
+    @media (max-width: 780px) {
+      .controls {
+        grid-template-columns: 1fr;
+      }
+
+      .job {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .apply {
+        align-self: flex-start;
+      }
+    }
   </style>
 </head>
 <body>
   <h1>Up and <span>Forward</span> — Live Listings</h1>
-  <p class="sub" id="count">Loading...</p>
+  <p class="sub">Lim inn en jobb-URL (f.eks. https://abakus.no/joblistings) og hent stillinger direkte i nettleseren.</p>
+
+  <div class="controls">
+    <input id="urlInput" type="url" placeholder="https://example.com/jobs" />
+    <button id="fetchBtn" class="btn btn-primary">Hent fra URL</button>
+    <button id="loadSavedBtn" class="btn btn-ghost">Last lagret fil</button>
+    <button id="exportBtn" class="btn btn-ghost">Last ned JSON</button>
+  </div>
+
+  <div id="status" class="status"></div>
+  <p class="sub" id="count">0 listings found</p>
   <div id="jobs"></div>
 
   <script>
-    fetch('new_jobs.json')
-      .then(r => r.json())
-      .then(jobs => {
-        document.getElementById('count').textContent = `${jobs.length} listings found`;
-        document.getElementById('jobs').innerHTML = jobs.map(j => `
-          <div class="job">
-            <div>
-              <div class="bank">${j.bank}</div>
-              <div class="title">${j.title}</div>
-              <div class="location">${j.location}</div>
-            </div>
-            <a class="apply" href="${j.url}" target="_blank">View & Apply →</a>
-          </div>
-        `).join('');
+    const statusEl = document.getElementById('status');
+    const countEl = document.getElementById('count');
+    const jobsEl = document.getElementById('jobs');
+    const urlInput = document.getElementById('urlInput');
+    const fetchBtn = document.getElementById('fetchBtn');
+    const loadSavedBtn = document.getElementById('loadSavedBtn');
+    const exportBtn = document.getElementById('exportBtn');
+
+    const STORAGE_URL_KEY = 'upforward_job_url';
+    const STORAGE_JOBS_KEY = 'upforward_jobs_cache';
+    const JOB_HINTS = [
+      'job', 'jobs', 'career', 'careers', 'position', 'vacancy',
+      'intern', 'internship', 'graduate', 'analyst', 'associate',
+      'stilling', 'stillinger', 'ledig', 'trainee'
+    ];
+    let currentJobs = [];
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function setStatus(message, type = '') {
+      statusEl.textContent = message;
+      statusEl.className = `status${type ? ` ${type}` : ''}`;
+    }
+
+    function dedupeJobs(jobs) {
+      const seen = new Set();
+      return jobs.filter((job) => {
+        const key = `${job.url}|${(job.title || '').toLowerCase()}`;
+        if (seen.has(key)) {
+          return false;
+        }
+        seen.add(key);
+        return true;
       });
+    }
+
+    function looksLikeJob(text, url) {
+      const value = `${text} ${url}`.toLowerCase();
+      return JOB_HINTS.some((hint) => value.includes(hint));
+    }
+
+    function titleFromUrl(url) {
+      try {
+        const path = new URL(url).pathname;
+        const slug = path.split('/').filter(Boolean).pop() || '';
+        return slug.replace(/[-_]+/g, ' ').trim();
+      } catch {
+        return '';
+      }
+    }
+
+    function normalizeJob(job, fallbackHost) {
+      const now = new Date().toISOString();
+      return {
+        id: job.id || `generic_${Math.random().toString(16).slice(2, 12)}`,
+        bank: job.bank || fallbackHost || 'Unknown source',
+        title: (job.title || '').trim() || 'Untitled role',
+        location: (job.location || '').trim() || 'Unknown',
+        url: (job.url || '').trim() || '#',
+        found_at: job.found_at || now
+      };
+    }
+
+    function parseLocationFromJsonLd(jobLocation) {
+      if (!jobLocation) return '';
+      if (typeof jobLocation === 'string') return jobLocation.trim();
+      if (Array.isArray(jobLocation)) {
+        return jobLocation.map(parseLocationFromJsonLd).filter(Boolean).join(', ');
+      }
+      if (typeof jobLocation === 'object') {
+        const address = jobLocation.address || jobLocation;
+        if (typeof address === 'string') return address.trim();
+        if (address && typeof address === 'object') {
+          const parts = [
+            address.addressLocality,
+            address.addressRegion,
+            address.addressCountry
+          ].filter(Boolean);
+          return parts.join(', ');
+        }
+      }
+      return '';
+    }
+
+    function flattenObjects(value, bucket = []) {
+      if (!value) return bucket;
+      if (Array.isArray(value)) {
+        value.forEach((item) => flattenObjects(item, bucket));
+        return bucket;
+      }
+      if (typeof value === 'object') {
+        bucket.push(value);
+        Object.values(value).forEach((item) => flattenObjects(item, bucket));
+      }
+      return bucket;
+    }
+
+    function parseJobsFromHtml(html, baseUrl) {
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const host = new URL(baseUrl).hostname;
+      const jobs = [];
+
+      const scripts = [...doc.querySelectorAll('script[type="application/ld+json"]')];
+      scripts.forEach((script) => {
+        const raw = script.textContent?.trim();
+        if (!raw) return;
+        const candidates = [raw];
+        if (raw.includes('\n')) {
+          raw.split('\n').map((line) => line.trim()).filter(Boolean).forEach((line) => candidates.push(line));
+        }
+
+        candidates.forEach((candidate) => {
+          try {
+            const json = JSON.parse(candidate);
+            const nodes = flattenObjects(json);
+            nodes.forEach((node) => {
+              const nodeType = node['@type'];
+              const types = Array.isArray(nodeType) ? nodeType : [nodeType];
+              const hasJobPosting = types.some((t) => String(t || '').toLowerCase() === 'jobposting');
+              if (!hasJobPosting) return;
+
+              const title = (node.title || node.name || '').trim();
+              if (!title) return;
+              const url = new URL(node.url || baseUrl, baseUrl).href;
+              jobs.push({
+                bank: host,
+                title,
+                location: parseLocationFromJsonLd(node.jobLocation || node.location),
+                url
+              });
+            });
+          } catch {
+            // Ignore malformed JSON-LD blobs.
+          }
+        });
+      });
+
+      [...doc.querySelectorAll('a[href]')].forEach((anchor) => {
+        const href = anchor.getAttribute('href') || '';
+        const title = (anchor.textContent || '').trim().replace(/\s+/g, ' ');
+        if (!href || href.startsWith('#')) return;
+        const url = new URL(href, baseUrl).href;
+        if (!looksLikeJob(title, url)) return;
+        jobs.push({
+          bank: host,
+          title: title || titleFromUrl(url),
+          location: '',
+          url
+        });
+      });
+
+      return dedupeJobs(jobs).map((job) => normalizeJob(job, host));
+    }
+
+    function parseJobsFromText(text, baseUrl) {
+      const host = new URL(baseUrl).hostname;
+      const jobs = [];
+      const markdownLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
+
+      for (const match of text.matchAll(markdownLinkRegex)) {
+        const title = (match[1] || '').trim();
+        const url = (match[2] || '').trim();
+        if (!url || !looksLikeJob(title, url)) continue;
+        jobs.push({ bank: host, title: title || titleFromUrl(url), location: '', url });
+      }
+
+      const urlRegex = /(https?:\/\/[^\s<>"')\]]+)/g;
+      for (const match of text.matchAll(urlRegex)) {
+        const url = (match[1] || '').trim();
+        if (!looksLikeJob('', url)) continue;
+        jobs.push({ bank: host, title: titleFromUrl(url), location: '', url });
+      }
+
+      return dedupeJobs(jobs).map((job) => normalizeJob(job, host));
+    }
+
+    function parseJobsFromResponse(text, baseUrl) {
+      const looksHtml = /<html|<body|<a\s|<!doctype/i.test(text);
+      return looksHtml ? parseJobsFromHtml(text, baseUrl) : parseJobsFromText(text, baseUrl);
+    }
+
+    async function fetchPageText(url) {
+      const cleaned = url.replace(/^https?:\/\//i, '');
+      const candidates = [
+        { label: 'direct', url },
+        { label: 'r.jina.ai', url: `https://r.jina.ai/http://${cleaned}` },
+        { label: 'r.jina.ai-alt', url: `https://r.jina.ai/https://${cleaned}` }
+      ];
+      const errors = [];
+
+      for (const candidate of candidates) {
+        try {
+          const response = await fetch(candidate.url);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          const text = await response.text();
+          if (text.trim()) {
+            return { text, via: candidate.label };
+          }
+          throw new Error('Empty response');
+        } catch (error) {
+          errors.push(`${candidate.label}: ${error.message}`);
+        }
+      }
+
+      throw new Error(`Kunne ikke hente side (${errors.join(' | ')})`);
+    }
+
+    function persistCurrentJobs(jobs) {
+      currentJobs = Array.isArray(jobs) ? jobs : [];
+      localStorage.setItem(STORAGE_JOBS_KEY, JSON.stringify(currentJobs));
+    }
+
+    function renderJobs(jobs) {
+      const safeJobs = Array.isArray(jobs) ? jobs : [];
+      countEl.textContent = `${safeJobs.length} listings found`;
+      currentJobs = safeJobs;
+
+      if (!safeJobs.length) {
+        jobsEl.innerHTML = '<p class="sub">Ingen stillinger funnet.</p>';
+        return;
+      }
+
+      jobsEl.innerHTML = safeJobs.map((j) => `
+        <div class="job">
+          <div>
+            <div class="bank">${escapeHtml(j.bank || 'Unknown source')}</div>
+            <div class="title">${escapeHtml(j.title || 'Untitled role')}</div>
+            <div class="location">${escapeHtml(j.location || 'Unknown location')}</div>
+          </div>
+          <a class="apply" href="${escapeHtml(j.url || '#')}" target="_blank" rel="noopener noreferrer">View & Apply</a>
+        </div>
+      `).join('');
+    }
+
+    async function loadSavedJobs() {
+      setStatus('Laster lagrede stillinger fra nettleser eller new_jobs.json...');
+
+      const localRaw = localStorage.getItem(STORAGE_JOBS_KEY);
+      if (localRaw) {
+        try {
+          const localJobs = JSON.parse(localRaw);
+          if (Array.isArray(localJobs) && localJobs.length) {
+            renderJobs(localJobs);
+            setStatus('Lastet lagrede stillinger fra nettleser-cache.', 'ok');
+            return;
+          }
+        } catch {
+          // Ignore corrupt local cache.
+        }
+      }
+
+      try {
+        const response = await fetch(`new_jobs.json?t=${Date.now()}`);
+        if (!response.ok) {
+          throw new Error(`Kunne ikke lese new_jobs.json (${response.status})`);
+        }
+        const jobs = await response.json();
+        const normalized = Array.isArray(jobs) ? jobs.map((job) => normalizeJob(job, 'File source')) : [];
+        persistCurrentJobs(normalized);
+        renderJobs(normalized);
+        setStatus('Lastet stillinger fra new_jobs.json.', 'ok');
+      } catch (error) {
+        renderJobs([]);
+        setStatus(`Feil: ${error.message}`, 'error');
+      }
+    }
+
+    async function scrapeFromInput() {
+      const url = urlInput.value.trim();
+
+      if (!url) {
+        setStatus('Skriv inn en URL først.', 'error');
+        return;
+      }
+
+      try {
+        const parsed = new URL(url);
+        if (!['http:', 'https:'].includes(parsed.protocol)) {
+          throw new Error('URL må starte med http:// eller https://');
+        }
+      } catch (error) {
+        setStatus(`Ugyldig URL: ${error.message}`, 'error');
+        return;
+      }
+
+      localStorage.setItem(STORAGE_URL_KEY, url);
+      setStatus('Henter og analyserer jobbsiden...');
+      fetchBtn.disabled = true;
+      loadSavedBtn.disabled = true;
+      exportBtn.disabled = true;
+
+      try {
+        const { text, via } = await fetchPageText(url);
+        const jobs = parseJobsFromResponse(text, url);
+        persistCurrentJobs(jobs);
+        renderJobs(jobs);
+        setStatus(`Ferdig. Fant ${jobs.length} stillinger (via ${via}).`, jobs.length ? 'ok' : '');
+      } catch (error) {
+        setStatus(`Feil: ${error.message}`, 'error');
+      } finally {
+        fetchBtn.disabled = false;
+        loadSavedBtn.disabled = false;
+        exportBtn.disabled = false;
+      }
+    }
+
+    function exportJobs() {
+      if (!currentJobs.length) {
+        setStatus('Ingen stillinger å eksportere.', 'error');
+        return;
+      }
+      const blob = new Blob([JSON.stringify(currentJobs, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'new_jobs.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setStatus('JSON eksportert som new_jobs.json.', 'ok');
+    }
+
+    fetchBtn.addEventListener('click', scrapeFromInput);
+    loadSavedBtn.addEventListener('click', loadSavedJobs);
+    exportBtn.addEventListener('click', exportJobs);
+    urlInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        scrapeFromInput();
+      }
+    });
+
+    urlInput.value = localStorage.getItem(STORAGE_URL_KEY) || 'https://abakus.no/joblistings';
+    loadSavedJobs();
   </script>
 </body>
 </html>
